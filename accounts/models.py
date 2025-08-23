@@ -1,8 +1,13 @@
 import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser,BaseUserManager
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # Create your models here.
+def profile_image_upload_path(instance, filename):
+    return f'profile_images/{instance.user.id}/{filename}'
+
 class CustomUserManger(BaseUserManager):
     def create_user(self,email,password=None,**extra_fields):
         if not email: 
@@ -39,7 +44,7 @@ class CustomUser(AbstractUser):
     )
     username = None
     email = models.EmailField(unique=True)
-    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    profile_image = models.ImageField(upload_to=profile_image_upload_path, default='profile_images/default_avatar.png')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="customer")
     oauth_provider = models.CharField(max_length=50, null=True, blank=True)
     is_email_verified = models.BooleanField(default=False)
@@ -59,3 +64,23 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class Profile(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False,unique=True)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    bio = models.TextField(blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "User profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self):
+        return f"profile of {self.user.email}"
+
+@receiver(post_save, sender=CustomUser)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)

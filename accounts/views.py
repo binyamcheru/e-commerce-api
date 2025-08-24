@@ -105,3 +105,47 @@ class VerifyEmailView(APIView):
                 {"error": "Invalid verification link"}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings
+from django_rest_passwordreset.signals import reset_password_token_created
+from django.dispatch import receiver
+
+@receiver(reset_password_token_created)
+def password_reset_token_created(sender, reset_password_token, *args, **kwargs):
+    """
+    Handle password reset token creation and send email
+    """
+    # Build the reset URL (frontend URL)
+    reset_url = f"http://localhost:5173/password-reset/{reset_password_token.key}/"
+    
+    # Prepare email context
+    context = {
+        'user': reset_password_token.user,
+        'reset_url': reset_url,
+        'site_name': getattr(settings, 'SITE_NAME', 'Our Site'),
+        'email_address': reset_password_token.user.email,
+    }
+    
+    # Render HTML template
+    html_message = render_to_string("accounts/email_reset.html", context)
+    
+    # Create plain text version (optional but recommended)
+    plain_message = strip_tags(html_message)
+    
+    # Create and send email
+    email = EmailMultiAlternatives(
+        subject=f"Password Reset Request for {reset_password_token.user.email}",
+        body=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,  # Use from .env
+        to=[reset_password_token.user.email],
+    )
+    email.attach_alternative(html_message, "text/html")
+    
+    try:
+        email.send()
+        print(f"Password reset email sent to {reset_password_token.user.email}")
+    except Exception as e:
+        print(f"Error sending password reset email: {e}")

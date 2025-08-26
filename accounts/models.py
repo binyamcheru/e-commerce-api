@@ -44,7 +44,6 @@ class CustomUser(AbstractUser):
     )
     username = None
     email = models.EmailField(unique=True)
-    profile_image = models.ImageField(upload_to=profile_image_upload_path, default='profile_images/default_avatar.png')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="customer")
     oauth_provider = models.CharField(max_length=50, null=True, blank=True)
     is_email_verified = models.BooleanField(default=False)
@@ -68,6 +67,7 @@ class CustomUser(AbstractUser):
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False,unique=True)
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    profile_image = models.ImageField(upload_to=profile_image_upload_path, default='profile_images/default_avatar.png')
     bio = models.TextField(blank=True)
     phone_number = models.CharField(max_length=20, blank=True)
     address = models.CharField(max_length=255, blank=True)

@@ -1,7 +1,11 @@
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
-from rest_framework import generics
-from .serializers import RegisterSerializer, LoginUserSerializer
+from rest_framework import generics, permissions
+from .serializers import (
+    RegisterSerializer, 
+    LoginUserSerializer, 
+    ProfileUpdateSerializer, 
+    ProfileSerializer)
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode
@@ -19,7 +23,6 @@ from django_rest_passwordreset.signals import reset_password_token_created
 from django.dispatch import receiver
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
-from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.exceptions import InvalidToken
 
 # Create your views here.
@@ -233,3 +236,14 @@ class LogoutView(APIView):
         response.delete_cookie("access_token")
         response.delete_cookie("refresh_token")
         return response
+
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return ProfileSerializer  # For reading - includes email
+        return ProfileUpdateSerializer  # For updating - no email
+    
+    def get_object(self):
+        return self.request.user.profile

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
+    'products.apps.ProductsConfig',
     'rest_framework',
     'rest_framework_simplejwt',
     'django_rest_passwordreset',

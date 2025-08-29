@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django_rest_passwordreset',
     'corsheaders',
     "rest_framework_simplejwt.token_blacklist",
+    'django_filters',
 ]
 
 MIDDLEWARE = [
